@@ -98,7 +98,6 @@ def layer(
   wY = w[:, :, None] * Y[:, None, :]  # (edge, n, irreps)
   wY = e3nn.index_add(edge_src, wY, map_back=True) / \
       jnp.sqrt(num_neighbors)  # (edge, n, irreps)
-  wY = profile("allegro:wY", wY)
 
   V = e3nn.tensor_product(wY, V, filter_ir_out="0e" +
                           irreps_out).simplify()  # (edge, n, irreps)
@@ -169,9 +168,6 @@ def allegro_impl(
   w = e3nn.MultiLayerPerceptron([n], None)(x)  # (edge, n)
   V = w[:, :, None] * V[:, None, :]  # (edge, n, irreps)
 
-  x = profile("allegro:x", x)
-  V = profile("allegro:V", V)
-
   for _ in range(num_layers):
     y, V = layer(
         x,
@@ -188,9 +184,6 @@ def allegro_impl(
 
     alpha = 1 / 2
     x = (x + alpha * y) / jnp.sqrt(1 + alpha**2)
-
-    x = profile("allegro:x", x)
-    V = profile("allegro:V", V)
 
   x = e3nn.MultiLayerPerceptron([128], None)(x)  # (edge, 128)
 
